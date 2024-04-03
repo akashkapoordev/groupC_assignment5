@@ -24,6 +24,12 @@ type Invitation struct {
 	IssuedAt time.Time json:"issued_at"
 }
 
+// Admin struct represents an admin user
+type Admin struct {
+	ID       int    `json:"id"`
+	Username string `json:"username"`
+	Password string `json:"-"`
+}
 
 
 // SetupDatabase creates a connection to the PostgreSQL database
@@ -186,4 +192,31 @@ func LoginHandler(db *sql.DB) http.HandlerFunc {
 		// Return a success message if the login is successful
 		fmt.Fprintf(w, "Logged in successfully")
 	}
+}
+func generateInvitationCode() string { 
+	// Define the characters that can be used in the invitation code
+	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+
+	// Initialize a random seed using the current time
+	rand.Seed(time.Now().UnixNano())
+
+	// Initialize an empty string to store the generated code
+	code := make([]byte, 10)
+
+	// Generate a random character from the chars string and append it to the code
+	for i := range code {
+		code[i] = chars[rand.Intn(len(chars))]
+	}
+
+	// Return the generated invitation code as a string
+	return string(code)
+}
+
+
+
+// storeInvitationCode inserts the generated invitation code into the database 
+func storeInvitationCode(db *sql.DB, invitationCode string) error {
+	_, err := db.Exec("INSERT INTO invitations (code, used, issued_at) VALUES ($1, $2, $3)",
+		invitationCode, false, time.Now())
+	return err
 }

@@ -15,3 +15,14 @@ const (
 	invitationsTable = "invitations"
 	adminsTable      = "admins"
 )
+
+// SetupDatabase creates a connection to the PostgreSQL database
+func SetupDatabase() *sql.DB {
+	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return db
+}

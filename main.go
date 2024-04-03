@@ -253,3 +253,26 @@ func storeInvitationCode(db *sql.DB, invitationCode string) error {
 		invitationCode, false, time.Now())
 	return err
 }
+
+
+
+//  verifies the provided admin credentials against the values stored in the database 
+func verifyAdminCredentials(db *sql.DB, admin Admin) (bool, error) {
+	var storedPasswordHash string
+	err := db.QueryRow("SELECT password_hash FROM admins WHERE username = $1", admin.Username).Scan(&storedPasswordHash)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil // Admin not found
+		}
+		return false, err // Other error occurred
+	}
+
+	// Compare the provided password with the stored password hash
+	err = bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(admin.Password))
+	if err != nil {
+		return false, nil // Passwords do not match
+	}
+
+	return true, nil // Admin credentials are valid
+}
+

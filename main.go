@@ -276,3 +276,15 @@ func verifyAdminCredentials(db *sql.DB, admin Admin) (bool, error) {
 	return true, nil // Admin credentials are valid
 }
 
+
+func StaticFileHandler(w http.ResponseWriter, r *http.Request) {
+	// Construct the absolute file path to index.html
+	indexPath := filepath.Join("frontend", "index.html")
+
+	// Serve the file
+	http.ServeFile(w, r, indexPath)
+}
+func invitePageHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "frontend/invite/index.html")
+}
+

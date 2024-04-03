@@ -16,6 +16,16 @@ const (
 	adminsTable      = "admins"
 )
 
+// Invitation struct represents an invitation code //B
+type Invitation struct {
+	ID       int       json:"id"
+	Code     string    json:"code"
+	Used     bool      json:"used"
+	IssuedAt time.Time json:"issued_at"
+}
+
+
+
 // SetupDatabase creates a connection to the PostgreSQL database
 func SetupDatabase() *sql.DB {
 	connStr := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",

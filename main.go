@@ -13,7 +13,7 @@ const (
 const (
 	usersTable       = "users"
 	invitationsTable = "invitations"
-	adminsTable      = "admins"
+	adminsTable      = "admins"
 )
 
 // Invitation struct represents an invitation code //B
@@ -110,4 +110,33 @@ func RegisterHandler(db *sql.DB) http.HandlerFunc {
 
 		fmt.Fprintf(w, "User registered successfully")
 	}
+}
+
+// isUsernameExists checks if the username already exists in the database   //C
+func isUsernameExists(db *sql.DB, username string) (bool, error) {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM users WHERE username = $1", username).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// validateInvitationCode checks if the provided invitation code is valid and unused //C
+func validateInvitationCode(db *sql.DB, code string) (bool, error) {
+	var used bool
+	err := db.QueryRow("SELECT used FROM invitations WHERE code = $1", code).Scan(&used)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil // Invitation code not found
+		}
+		return false, err // Other error occurred
+	}
+	return !used, nil // Invitation code is valid if it is not used
+}
+
+// markInvitationCodeAsUsed marks the invitation code as used in the database 
+func markInvitationCodeAsUsed(db *sql.DB, code string) error {
+	_, err := db.Exec("UPDATE invitations SET used = true WHERE code = $1", code)
+	return err
 }

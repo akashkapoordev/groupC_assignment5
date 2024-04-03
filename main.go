@@ -212,7 +212,40 @@ func generateInvitationCode() string {
 	return string(code)
 }
 
+// this Function will generate a new invitation code  
+func GenerateInvitationHandler(db *sql.DB) http.HandlerFunc { 
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Parse the request body to extract admin credentials
+		var admin Admin
+		if err := json.NewDecoder(r.Body).Decode(&admin); err != nil {
+			http.Error(w, "Failed to decode request body", http.StatusBadRequest)
+			return
+		}
 
+		// Check if the provided admin credentials are valid
+		valid, err := verifyAdminCredentials(db, admin)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Failed to verify admin credentials: %v", err), http.StatusInternalServerError)
+			return
+		}
+		if !valid {
+			http.Error(w, "Invalid admin credentials", http.StatusUnauthorized)
+			return
+		}
+
+		// Generate a new unique invitation code
+		invitationCode := generateInvitationCode()
+
+		// Store the invitation code in the database
+		if err := storeInvitationCode(db, invitationCode); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to generate invitation code: %v", err), http.StatusInternalServerError)
+			return
+		}
+
+		// Return the generated invitation code
+		json.NewEncoder(w).Encode(map[string]string{"invitation_code": invitationCode})
+	}
+}
 
 // storeInvitationCode inserts the generated invitation code into the database 
 func storeInvitationCode(db *sql.DB, invitationCode string) error {

@@ -140,3 +140,50 @@ func markInvitationCodeAsUsed(db *sql.DB, code string) error {
 	_, err := db.Exec("UPDATE invitations SET used = true WHERE code = $1", code)
 	return err
 }
+
+
+// LoginHandler handles user login functionality
+func LoginHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Check if the request method is POST
+		if r.Method != "POST" {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Decode the request body to extract user credentials
+		var user User
+		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
+			http.Error(w, "Failed to decode request body", http.StatusBadRequest)
+			return
+		}
+		log.Println("Received user:", user)
+
+		// Retrieve the stored password hash for the given username from the database
+		var storedPasswordHash string
+		err := db.QueryRow("SELECT password_hash FROM users WHERE username = $1", user.Username).Scan(&storedPasswordHash)
+		if err != nil {
+			if err == sql.ErrNoRows {
+				http.Error(w, "User not found", http.StatusUnauthorized)
+				return
+			}
+			http.Error(w, "Failed to retrieve user details", http.StatusInternalServerError)
+			log.Println("Error retrieving user details:", err)
+			return
+		}
+
+		// Log the stored password hash for debugging purposes
+		log.Println("Stored password hash for user", user.Username, ":", storedPasswordHash)
+
+		// Compare the stored hashed password with the provided password
+		err = bcrypt.CompareHashAndPassword([]byte(storedPasswordHash), []byte(user.Password))
+		if err != nil {
+			http.Error(w, "Invalid username or password", http.StatusUnauthorized)
+			log.Println("Invalid username or password for user", user.Username, ":", err)
+			return
+		}
+
+		// Return a success message if the login is successful
+		fmt.Fprintf(w, "Logged in successfully")
+	}
+}

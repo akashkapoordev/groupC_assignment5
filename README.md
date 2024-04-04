@@ -81,6 +81,9 @@ The server will start running at http://localhost:8081
     http://localhost:8081/invite
     ```
 
+   ##ER Diagram
+  ![image](https://github.com/akashkapoordev/groupC_assignment5/assets/96789490/5ac18403-fec8-439f-b051-ebff505d0c83)
+  
 
 
     -

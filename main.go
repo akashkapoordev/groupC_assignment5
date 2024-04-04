@@ -345,4 +345,7 @@ func main() {
 	http.HandleFunc("/register-admin", RegisterAdminHandler(db))
 	http.HandleFunc("/invite", invitePageHandler)
 	http.HandleFunc("/", StaticFileHandler)
+	
+	log.Println("Server started on :8081")
+	log.Fatal(http.ListenAndServe(":8081", nil))
 }

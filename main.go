@@ -288,3 +288,48 @@ func invitePageHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "frontend/invite/index.html")
 }
 
+// RegisterAdminHandler handles registration of admin users
+func RegisterAdminHandler(db *sql.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		var admin Admin
+		if err := json.NewDecoder(r.Body).Decode(&admin); err != nil {
+			http.Error(w, "Failed to decode request body", http.StatusBadRequest)
+			return
+		}
+
+		// Check if the admin username already exists
+		var count int
+		err := db.QueryRow("SELECT COUNT(*) FROM admins WHERE username = $1", admin.Username).Scan(&count)
+		if err != nil {
+			http.Error(w, "Failed to check admin existence", http.StatusInternalServerError)
+			return
+		}
+		if count > 0 {
+			http.Error(w, "Admin username already exists", http.StatusConflict)
+			return
+		}
+
+		// Hash admin password
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(admin.Password), bcrypt.DefaultCost)
+		if err != nil {
+			http.Error(w, "Failed to hash password", http.StatusInternalServerError)
+			return
+		}
+
+		// Store admin details in the database
+		_, err = db.Exec("INSERT INTO admins (username, password_hash) VALUES ($1, $2)", admin.Username, string(hashedPassword))
+		if err != nil {
+			http.Error(w, "Failed to save admin", http.StatusInternalServerError)
+			return
+		}
+
+		// Return success message
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte("Admin registered successfully!"))
+	}
+}

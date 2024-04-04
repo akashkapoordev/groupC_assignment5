@@ -81,7 +81,10 @@ The server will start running at http://localhost:8081
     http://localhost:8081/invite
     ```
 
-   ##ER Diagram
+   ## ER Diagram
+
+   It must be noted that tables are not shown as connected in the diagram since there are no direct 
+   relationships between these tables
 
   ![image](https://github.com/akashkapoordev/groupC_assignment5/assets/96789490/5ac18403-fec8-439f-b051-ebff505d0c83)
   

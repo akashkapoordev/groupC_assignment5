@@ -40,4 +40,9 @@ docker exec -it $CONTAINER_NAME psql -U $POSTGRES_USER -d $POSTGRES_DB -c "$TABL
 docker exec -it $CONTAINER_NAME psql -U $POSTGRES_USER -d $POSTGRES_DB -c "$TABLE_INVITATIONS_SQL"
 docker exec -it $CONTAINER_NAME psql -U $POSTGRES_USER -d $POSTGRES_DB -c "$TABLE_ADMINS_SQL"
 
+#Note : if the OS is Windows , kindly comment the line 38-40 and uncomment 43-45
+# docker exec $CONTAINER_NAME psql -U $POSTGRES_USER -d $POSTGRES_DB -c "$TABLE_USERS_SQL"
+# docker exec $CONTAINER_NAME psql -U $POSTGRES_USER -d $POSTGRES_DB -c "$TABLE_INVITATIONS_SQL"
+# docker exec $CONTAINER_NAME psql -U $POSTGRES_USER -d $POSTGRES_DB -c "$TABLE_ADMINS_SQL"
+
 echo "PostgreSQL setup completed successfully."

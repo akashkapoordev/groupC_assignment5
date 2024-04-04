@@ -1,5 +1,22 @@
 package main
 
+import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"log"
+	"math/rand"
+	"net/http"
+	"path/filepath"
+	"time"
+
+	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
+
+	"github.com/dgrijalva/jwt-go"
+	"golang.org/x/time/rate"
+)
+
 // Define database connection details
 const (
 	host     = "localhost"
@@ -18,10 +35,18 @@ const (
 
 // Invitation struct represents an invitation code //B
 type Invitation struct {
-	ID       int       json:"id"
-	Code     string    json:"code"
-	Used     bool      json:"used"
-	IssuedAt time.Time json:"issued_at"
+	ID       int       `json:"id"`
+	Code     string    `json:"code"`
+	Used     bool      `json:"used"`
+	IssuedAt time.Time `json:"issued_at"`
+}
+
+var jwtKey = []byte("your_secret_key")
+
+// User struct represents a user in the system
+type User struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 // Admin struct represents an admin user
@@ -40,10 +65,12 @@ func SetupDatabase() *sql.DB {
 	if err != nil {
 		log.Fatal(err)
 	}
-	return db
+	return db
 }
 
-// RegisterHandler handles user registration 
+var limiter = rate.NewLimiter(rate.Limit(1), 5) // Allow 1 request per 5 seconds
+
+// RegisterHandler handles user registration
 func RegisterHandler(db *sql.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
@@ -53,9 +80,9 @@ func RegisterHandler(db *sql.DB) http.HandlerFunc {
 
 		// Parse request body to extract user details
 		var requestBody struct {
-			Username       string json:"username"
-			Password       string json:"password"
-			InvitationCode string json:"invitation_code"
+			Username       string `json:"username"`
+			Password       string `json:"password"`
+			InvitationCode string `json:"invitation_code"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 			http.Error(w, "Failed to decode request body", http.StatusBadRequest)
@@ -147,6 +174,14 @@ func markInvitationCodeAsUsed(db *sql.DB, code string) error {
 	return err
 }
 
+func GenerateJWT(user User) (string, error) {
+	claims := jwt.MapClaims{
+		"username": user.Username,
+		"exp":      time.Now().Add(time.Minute * 15).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(jwtKey)
+}
 
 // LoginHandler handles user login functionality
 func LoginHandler(db *sql.DB) http.HandlerFunc {
@@ -157,7 +192,13 @@ func LoginHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Decode the request body to extract user credentials
+		ctx := r.Context()
+		if err := limiter.Wait(ctx); err != nil {
+			http.Error(w, "Rate limit exceeded", http.StatusTooManyRequests)
+			return
+		}
+
+		// Parse the request body to extract user credentials
 		var user User
 		if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
 			http.Error(w, "Failed to decode request body", http.StatusBadRequest)
@@ -189,8 +230,21 @@ func LoginHandler(db *sql.DB) http.HandlerFunc {
 			return
 		}
 
-		// Return a success message if the login is successful
-		fmt.Fprintf(w, "Logged in successfully")
+		// Generate JWT token
+		tokenString, err := GenerateJWT(user)
+		if err != nil {
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		// Set JWT token as cookie
+		expiration := time.Now().Add(24 * time.Hour)
+		cookie := http.Cookie{Name: "session_token", Value: tokenString, Expires: expiration}
+		http.SetCookie(w, &cookie)
+
+		// Respond with a success message (or a JSON response)
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "Logged in successfully. Welcome, %s!", user.Username)
 	}
 }
 func generateInvitationCode() string { 
@@ -211,6 +265,23 @@ func generateInvitationCode() string {
 	// Return the generated invitation code as a string
 	return string(code)
 }
+func dashboardFileHandler(w http.ResponseWriter, r *http.Request) {
+	filePath := filepath.Join("frontend", "dashboard.html")
+	http.ServeFile(w, r, filePath)
+}
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	// Clear the session token cookie
+	cookie := http.Cookie{
+		Name:     "session_token",
+		Value:    "",
+		Expires:  time.Now().AddDate(0, 0, -1), // Expire immediately
+		HttpOnly: true,
+		Path:     "/",
+	}
+	http.SetCookie(w, &cookie)
+	fmt.Fprintf(w, "Logged out successfully")
+}
+
 
 // this Function will generate a new invitation code  
 func GenerateInvitationHandler(db *sql.DB) http.HandlerFunc { 
@@ -344,6 +415,8 @@ func main() {
 	http.HandleFunc("/generate-invitation", GenerateInvitationHandler(db))
 	http.HandleFunc("/register-admin", RegisterAdminHandler(db))
 	http.HandleFunc("/invite", invitePageHandler)
+	http.HandleFunc("/logout", logoutHandler)
+	http.HandleFunc("/dashboard", dashboardFileHandler)
 	http.HandleFunc("/", StaticFileHandler)
 	
 	log.Println("Server started on :8081")

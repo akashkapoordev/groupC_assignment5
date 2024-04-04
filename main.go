@@ -333,3 +333,9 @@ func RegisterAdminHandler(db *sql.DB) http.HandlerFunc {
 		w.Write([]byte("Admin registered successfully!"))
 	}
 }
+
+
+func main() {
+	db := SetupDatabase()
+	defer db.Close()
+}

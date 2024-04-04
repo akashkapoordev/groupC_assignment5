@@ -14,7 +14,7 @@ This project is a simple RESTful API for user management, including registration
 1. **Clone the repository:**
 
    ```go
-   git clone https://github.com/akashkapoordev/groupC_assignment4/blob/master/main.go
+   git clone https://github.com/akashkapoordev/groupC_assignment4.git
    ```
 
 2. **Install dependencies:**

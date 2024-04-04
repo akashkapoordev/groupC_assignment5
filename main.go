@@ -266,6 +266,13 @@ func generateInvitationCode() string {
 	return string(code)
 }
 func dashboardFileHandler(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_token")
+	if err != nil || cookie.Value == "" {
+		// If the cookie is not present, redirect to the login page
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	
 	filePath := filepath.Join("frontend", "dashboard.html")
 	http.ServeFile(w, r, filePath)
 }

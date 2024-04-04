@@ -338,4 +338,11 @@ func RegisterAdminHandler(db *sql.DB) http.HandlerFunc {
 func main() {
 	db := SetupDatabase()
 	defer db.Close()
+
+	http.HandleFunc("/register", RegisterHandler(db))
+	http.HandleFunc("/login", LoginHandler(db))
+	http.HandleFunc("/generate-invitation", GenerateInvitationHandler(db))
+	http.HandleFunc("/register-admin", RegisterAdminHandler(db))
+	http.HandleFunc("/invite", invitePageHandler)
+	http.HandleFunc("/", StaticFileHandler)
 }

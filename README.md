@@ -19,13 +19,15 @@ This project is a simple RESTful API for user management, including registration
 
 2. **Install dependencies:**
     ```go
-    cd user-management-api
+    cd groupC_assignment4
     go mod download
     ```
 
 3. **Set up the PostgreSQL database:**
 
 - Create a new PostgreSQL database named users.
+- For database, please check "Database script" folder, inside this folder you will find postgres script.
+- Please run that script, makesure your Docker is running.
 - Update the database connection details in the main.go file if necessary.
 
 4. **Build and run the application:**

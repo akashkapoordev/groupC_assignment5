@@ -86,6 +86,27 @@ The server will start running at http://localhost:8081
    It must be noted that tables are not shown as connected in the diagram since there are no direct 
    relationships between these tables
 
+
+```bash
+# Build GO application with Linux architecture on the local machine
+GOOS=linux GOARCH=amd64 go build -o ashbir-go-crud
+
+# After running EC2 instance and copying all frontend, scripts, and main.go files
+
+# Install Docker on EC2
+sudo yum update
+sudo yum search docker
+sudo yum install docker
+
+# Starting Docker
+sudo systemctl start docker
+
+# Running Postgres script on AWS EC2
+cd /home/ec2-user/
+chmod +x ./setup_postgres.sh
+./setup_postgres.sh
+```
+
   ![image](https://github.com/akashkapoordev/groupC_assignment5/assets/96789490/5ac18403-fec8-439f-b051-ebff505d0c83)
   
 

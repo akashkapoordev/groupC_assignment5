@@ -80,7 +80,7 @@ The server will start running at http://localhost:8081
     ```bash
     http://localhost:8081/invite
     ```
-
+   # Deployment Steps on AWS EC2 Instance
    ```bash
    # Build GO application with Linux architecture on the local machine
    GOOS=linux GOARCH=amd64 go build -o ashbir-go-crud
